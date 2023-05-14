@@ -4,7 +4,7 @@ import sys
 db_file = 'word_database.db'
 
 def search_word(word):
-    word = word[::-1] # reverse the word, read it in right to left
+    word = word # [::-1] # reverse the word, read it in right to left
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
     
@@ -14,8 +14,10 @@ def search_word(word):
     conn.close()
     
     if result:
+        print(f"{result[1]} ✅ {result[0]}")
         return True
-    else:
+    else: 
+        print(f"{word} ❌")
         return False
 
 if __name__ == '__main__':
@@ -24,8 +26,9 @@ if __name__ == '__main__':
         print("Usage: python script.py <word_to_search>")
         sys.exit(1)
 
-    word_to_search = sys.argv[1] # read it in reverse, right to left
-    
+    word_to_search = sys.argv[1]
+    print(word_to_search)
 
-    is_found = search_word(word_to_search)
-    print(f"Word '{word_to_search}' found: {is_found}")
+
+    search_word(word_to_search) # [::-1]
+    

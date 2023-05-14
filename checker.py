@@ -3,34 +3,46 @@ import sqlite3
 
 db_file = 'word_database.db'
 
+verbose = False
+
 def check_word(word, conn):
     c = conn.cursor()
-    c.execute("SELECT word FROM words WHERE word=?", (word,))
+    c.execute("SELECT id, word FROM words WHERE word=?", (word,))
     result = c.fetchone()
     if result is None:
-        print(f"{word} ❌")
+        if verbose: 
+            print(f"{word} ❌") 
         return False
-    print(f"{word} ✅")
+    if verbose:
+        print(f"{result[1]} ✅ {result[0]}") 
     return True
+
+
+def get_words_matching_pattern(pattern, conn):
+    length = len(pattern)
+    c = conn.cursor()
+    pattern = pattern.replace('_', '%')
+    c.execute("SELECT word FROM words WHERE word LIKE ? ESCAPE '/' AND length(word) = ?", (pattern, length))
+    results = c.fetchall()
+    return [result[0] for result in results] if results else []
 
 def check_crossword_validity(crossword):
     conn = sqlite3.connect(db_file)
+    is_valid = True
 
     # Check horizontal words
     for row in crossword:
         word = ''
-        for letter in row[::-1]: # read it backwards! right to left 
+        for letter in row: # [::-1]: # read it backwards! right to left 
             if letter != 'x':
                 word += letter
             elif len(word) > 1:
                 if not check_word(word, conn):
-                    conn.close()
-                    return False
+                    is_valid = False
                 word = ''
         if len(word) > 1:
             if not check_word(word, conn):
-                conn.close()
-                return False
+                is_valid = False
 
     # Transpose the crossword to check vertical words
     crossword_transposed = list(map(list, zip(*crossword)))
@@ -42,20 +54,26 @@ def check_crossword_validity(crossword):
                 word += letter
             elif len(word) > 1:
                 if not check_word(word, conn):
-                    conn.close()
-                    return False
+                    is_valid = False
                 word = ''
         if len(word) > 1:
             if not check_word(word, conn):
-                conn.close()
-                return False
+                is_valid = False
 
     conn.close()
 
-    return True
+    return is_valid
+
+# def reverse_rows(crossword):
+#     reversed_crossword = []
+#     for row in crossword:
+#         reversed_row = row[::-1]  # Reverse the letters in the row
+#         reversed_crossword.append(reversed_row)
+#     return reversed_crossword
 
 if __name__ == '__main__':
-    # Example usage
+    verbose = True
+    
     if len(sys.argv) != 2:
         print("Usage: python checker.py file")
         sys.exit(1)
@@ -67,3 +85,8 @@ if __name__ == '__main__':
 
     is_valid = check_crossword_validity(crossword)
     print(f"Crossword validity: {is_valid}")
+
+    # crossword = reverse_rows(crossword)
+    # is_valid = check_crossword_validity(crossword)
+    # print(f"Crossword validity: {is_valid}")
+    # 

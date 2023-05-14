@@ -15,7 +15,7 @@ c.execute('''CREATE TABLE IF NOT EXISTS words
 c.execute("CREATE INDEX IF NOT EXISTS word_index ON words (word)")
 
 # Path to the folder containing text files
-folder_path = 'words'
+folder_path = 'basic_words' # words
 
 # Iterate through all text files in the folder
 for file_name in os.listdir(folder_path):

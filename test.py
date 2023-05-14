@@ -5,10 +5,6 @@ from checker import check_crossword_validity
 from search import search_word
 
 def create_file(crossword):
-    # lines = text.strip().split('\n')
-    # reversed_lines = reversed(lines)
-    # crossword = '\n'.join(reversed_lines)
-
     crossword = '\n'.join(filter(lambda line: line.strip(), crossword.strip().split('\n')))
     file = io.StringIO()
     file.write(crossword)
@@ -17,12 +13,12 @@ def create_file(crossword):
 
 class SearchWordTestCase(unittest.TestCase):
     def test_word_found(self):
-        word_to_search = "ולש" # [::-1] 
+        word_to_search = "ולש"[::-1] 
         is_found = search_word(word_to_search)
         self.assertTrue(is_found)
 
     def test_word_not_found(self):
-        word_to_search = "שלו" # [::-1]
+        word_to_search = "שלו"[::-1]
         is_found = search_word(word_to_search)
         self.assertFalse(is_found)
 
@@ -41,7 +37,7 @@ class CrosswordValidationTestCase(unittest.TestCase):
 
     def test_bad_horizontal_crossword(self):
         file = create_file("""
-        שלו
+        ולש
         לכל
         ולו
         """)
