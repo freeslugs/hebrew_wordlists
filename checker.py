@@ -1,3 +1,4 @@
+import csv
 import sys
 import sqlite3
 
@@ -71,22 +72,22 @@ def check_crossword_validity(crossword):
 #         reversed_crossword.append(reversed_row)
 #     return reversed_crossword
 
+
 if __name__ == '__main__':
     verbose = True
-    
+
     if len(sys.argv) != 2:
         print("Usage: python checker.py file")
         sys.exit(1)
 
     crossword_file = sys.argv[1]
+    crossword = []
+
     # Read the crossword file
     with open(crossword_file, 'r', encoding='utf-8') as file:
-        crossword = [list(line.strip()) for line in file]
+        reader = csv.reader(file, delimiter='\t')
+        for row in reader:
+            crossword.append(row)
 
     is_valid = check_crossword_validity(crossword)
     print(f"Crossword validity: {is_valid}")
-
-    # crossword = reverse_rows(crossword)
-    # is_valid = check_crossword_validity(crossword)
-    # print(f"Crossword validity: {is_valid}")
-    # 

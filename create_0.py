@@ -1,6 +1,7 @@
 import csv
 import itertools
 import sqlite3
+import sys
 from checker import check_word, get_words_matching_pattern, check_crossword_validity
 from tqdm import tqdm
 
@@ -51,11 +52,11 @@ def get_random_word(length, conn):
         return result[0]
     return None
 
-def create_crossword():
+def create_crossword(input_file, output_file):
     conn = sqlite3.connect('word_database.db')
 
     # Read crossword from input file
-    with open('input.csv', 'r', encoding='utf-8') as file:
+    with open(input_file, 'r', encoding='utf-8') as file:
         reader = csv.reader(file, delimiter='\t')
         crossword = list(reader)
     
@@ -66,7 +67,13 @@ def create_crossword():
     
     # Find the positions of the blank columns
     blank_columns = [i for i, col in enumerate(crossword[0]) if col == "_"]
-    word_combinations = list(itertools.product(get_words_matching_pattern("____", conn), repeat=len(blank_columns)))
+    num_blanks = row_num if col_num > row_num else col_num
+    pattern = "_" * num_blanks
+    word_combinations = list(itertools.product(get_words_matching_pattern(pattern, conn), repeat=len(blank_columns)))
+
+    print(len(word_combinations))
+
+    # import code; code.interact(local=dict(globals(), **locals()))
 
     for words in tqdm(word_combinations, desc="Generating Crossword", unit="combination"):
         crossword = template
@@ -78,27 +85,31 @@ def create_crossword():
 
         # pretty_print_crossword(crossword)
 
-        # import code; code.interact(local=dict(globals(), **locals()))
-
         if check_crossword_validity(crossword):
             conn.close()
+            save_crossword(crossword, output_file)
             return crossword
 
     conn.close()
     return None
 
 def save_crossword(crossword, filename):
-    # print('help')
     with open(filename, 'w', encoding='utf-8', newline='') as file:
         writer = csv.writer(file, delimiter='\t')
         for row in crossword:
             writer.writerow(row)
 
-# Example usage
-crossword = create_crossword()
-if crossword:
-    pretty_print_crossword(crossword)
-    save_crossword(crossword, 'output.csv')
-    print("Crossword generated and saved!")
-else:
-    print("Unable to generate a valid crossword.")
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Usage: python create.py input.csv output.csv")
+        sys.exit(1)
+
+    input_file = sys.argv[1]
+    output_file = sys.argv[2]
+
+    crossword = create_crossword(input_file, output_file)
+    if crossword:
+        pretty_print_crossword(crossword)
+        print("Crossword generated and saved!")
+    else:
+        print("Unable to generate a valid crossword.")

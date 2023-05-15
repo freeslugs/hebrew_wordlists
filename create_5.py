@@ -1,8 +1,9 @@
+from tqdm import tqdm
+
 import csv
-import itertools
+import random
 import sqlite3
 from checker import check_word, get_words_matching_pattern, check_crossword_validity
-from tqdm import tqdm
 
 def extract_words(crossword):
     words = []
@@ -18,8 +19,7 @@ def extract_words(crossword):
 
     return words
 
-def pretty_print_crossword(crossword):
-    conn = sqlite3.connect('word_database.db')
+def pretty_print_crossword(crossword, conn):
     row_separator = "+---" * len(crossword[0]) + "+"
     validity_row = "|"
     for col in range(len(crossword[0])-1, -1, -1):
@@ -62,43 +62,38 @@ def create_crossword():
     col_num, row_num = get_crossword_dimensions(crossword)
     template = crossword
 
-    pretty_print_crossword(crossword)
-    
-    # Find the positions of the blank columns
-    blank_columns = [i for i, col in enumerate(crossword[0]) if col == "_"]
-    word_combinations = list(itertools.product(get_words_matching_pattern("____", conn), repeat=len(blank_columns)))
+    pbar = tqdm(total=col_num * row_num, desc="Generating Crossword")
 
-    for words in tqdm(word_combinations, desc="Generating Crossword", unit="combination"):
+    while True:
         crossword = template
-
-        # Fill in the blank columns with the current word combination
-        for col_index, word in zip(blank_columns, words):
-            for row_index, letter in enumerate(word):
-                crossword[row_index][col_index] = letter
-
-        # pretty_print_crossword(crossword)
-
-        # import code; code.interact(local=dict(globals(), **locals()))
+        # Generate missing words
+        for row in range(col_num):
+            for col in range(row_num):
+                if crossword[row][col] == '_':
+                    word = ''.join(crossword[row])
+                    words = get_words_matching_pattern(word, conn)
+                    for possible_word in words:
+                        crossword_copy = [row.copy() for row in crossword]
+                        crossword_copy[row][col:col+len(possible_word)] = list(possible_word)
+                        if check_crossword_validity(crossword_copy):
+                            crossword = crossword_copy
+                            break
+                pbar.update(1)
 
         if check_crossword_validity(crossword):
-            conn.close()
-            return crossword
+            break  # All rows and columns are valid, exit the loop
 
+    pbar.close()
     conn.close()
-    return None
+
+    return crossword
+
 
 def save_crossword(crossword, filename):
-    # print('help')
     with open(filename, 'w', encoding='utf-8', newline='') as file:
         writer = csv.writer(file, delimiter='\t')
         for row in crossword:
             writer.writerow(row)
 
-# Example usage
 crossword = create_crossword()
-if crossword:
-    pretty_print_crossword(crossword)
-    save_crossword(crossword, 'output.csv')
-    print("Crossword generated and saved!")
-else:
-    print("Unable to generate a valid crossword.")
+save_crossword(crossword, 'output.csv')
